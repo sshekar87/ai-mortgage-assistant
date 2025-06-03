@@ -495,20 +495,19 @@
             if (currentRates.isLoading) return currentRates;
             
             currentRates.isLoading = true;
-            const queries = buildRateQueries(homePrice, loanAmount);
             const FHA_LIMIT = 524250;
             
             try {
-                console.log(`Fetching rates for loan amount: $${loanAmount.toLocaleString()}`);
+                console.log(`Fetching rates for loan amount: ${loanAmount.toLocaleString()}`);
                 
                 const fetchPromises = [
-                    fetch(queries.conventional).then(r => r.json()).then(data => ({type: 'conventional', data})),
-                    fetch(queries.va).then(r => r.json()).then(data => ({type: 'va', data}))
+                    fetch(`/api/rates?homePrice=${homePrice}&loanAmount=${loanAmount}&loanType=Conventional`).then(r => r.json()).then(data => ({type: 'conventional', data})),
+                    fetch(`/api/rates?homePrice=${homePrice}&loanAmount=${loanAmount}&loanType=VA`).then(r => r.json()).then(data => ({type: 'va', data}))
                 ];
                 
                 if (loanAmount <= FHA_LIMIT) {
                     fetchPromises.push(
-                        fetch(queries.fha).then(r => r.json()).then(data => ({type: 'fha', data}))
+                        fetch(`/api/rates?homePrice=${homePrice}&loanAmount=${loanAmount}&loanType=FHA`).then(r => r.json()).then(data => ({type: 'fha', data}))
                     );
                 }
                 
@@ -528,11 +527,11 @@
                 currentRates.lastUpdated = new Date();
                 currentRates.isLoading = false;
                 
-                console.log('Updated rates:', currentRates);
+                console.log('Updated rates via proxy:', currentRates);
                 return currentRates;
                 
             } catch (error) {
-                console.error('Failed to fetch rates:', error);
+                console.error('Failed to fetch rates via proxy:', error);
                 console.log('Using fallback rates');
                 
                 currentRates = {
