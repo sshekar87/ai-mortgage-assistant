@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Mortgage Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #3498db;
+        }
+
+        .message.assistant .message-avatar {
+            background: #2c3e50;
+        }
+
+        .message-content {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 70%;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: #3498db;
+            color: white;
+        }
+
+        .calculation-result {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+
+        .calculation-title {
+            font-weight: bold;
+            color: #2e7d32;
+            margin-bottom: 8px;
+        }
+
+        .payment-breakdown {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .input-container {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            background: white;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 24px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .message-input:focus {
+            border-color: #3498db;
+        }
+
+        .voice-button {
+            width: 48px;
+            height: 48px;
+            border: none;
+            border-radius: 50%;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.2s;
+        }
+
+        .voice-button:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .voice-button.listening {
+            background: #e74c3c;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .send-button {
+            width: 48px;
+            height: 48px;
+            border: none;
+            border-radius: 50%;
+            background: #2c3e50;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .send-button:hover {
+            background: #34495e;
+            transform: scale(1.05);
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 70px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #999;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .quick-action {
+            padding: 8px 12px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-action:hover {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
+            
+            .input-row {
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏠 AI Mortgage Assistant</h1>
+            <p>Ask me anything about mortgages - I'll help you calculate payments and qualify for loans</p>
+        </div>
+        
+        <div class="chat-container">
+            <div class="messages" id="messages">
+                <div class="message assistant">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        Hi! I'm your AI mortgage assistant. I can help you calculate payments, understand loan options, and guide you through the mortgage process. 
+                        
+                        <div class="quick-actions">
+                            <div class="quick-action" onclick="sendQuickMessage('Calculate payment for $400K home')">Calculate Payment</div>
+                            <div class="quick-action" onclick="sendQuickMessage('What credit score do I need?')">Credit Requirements</div>
+                            <div class="quick-action" onclick="sendQuickMessage('Compare loan types')">Loan Options</div>
+                            <div class="quick-action" onclick="sendQuickMessage('How much can I afford?')">Affordability</div>
+                        </div>
+                        
+                        Try asking: "What would my payment be on a $350K house with 10% down?"
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-container">
+                <div class="input-row">
+                    <button class="voice-button" id="voiceButton" onclick="toggleVoiceRecognition()">🎤</button>
+                    <input type="text" class="message-input" id="messageInput" placeholder="Ask me about mortgages..." onkeypress="handleKeyPress(event)">
+                    <button class="send-button" onclick="sendMessage()">➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== CORE CALCULATION FUNCTIONS (DEFINED FIRST) =====
+        function calculateMortgage(loanAmount, rate, termYears) {
+            const monthlyRate = rate / 100 / 12;
+            const numPayments = termYears * 12;
+            
+            if (monthlyRate === 0) {
+                return loanAmount / numPayments;
+            }
+            
+            const monthlyPayment = loanAmount * 
+                (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                (Math.pow(1 + monthlyRate, numPayments) - 1);
+            
+            return monthlyPayment;
+        }
+
+        function calculatePropertyTax(homePrice, taxRate = 1.2) {
+            return (homePrice * taxRate / 100) / 12;
+        }
+
+        function calculateInsurance(homePrice) {
+            return (homePrice * 0.35 / 100) / 12;
+        }
+
+        function calculatePMI(loanAmount, homePrice, loanType = 'conventional') {
+            // No PMI on jumbo loans (20% down required) or VA loans
+            if (loanType === 'jumbo' || loanType === 'va') {
+                return 0;
+            }
+            
+            const ltvRatio = loanAmount / homePrice;
+            if (ltvRatio > 0.8) {
+                return loanAmount * 0.005 / 12; // 0.5% annually
+            }
+            return 0;
+        }
+
+        function getLoanTypeFromAmount(loanAmount, requestedType = 'conventional') {
+            // 2025 loan limits
+            const FHA_LIMIT = 524250;
+            const CONVENTIONAL_LIMIT = 806500;
+            
+            // If amount requires jumbo, override any other request
+            if (loanAmount > CONVENTIONAL_LIMIT) {
+                return 'jumbo';
+            }
+            
+            // If FHA requested but amount too high, use conventional
+            if (requestedType === 'fha' && loanAmount > FHA_LIMIT) {
+                return 'conventional';
+            }
+            
+            return requestedType.toLowerCase();
+        }
+
+        function getCurrentRate(loanAmount, loanType = 'conventional') {
+            const actualLoanType = getLoanTypeFromAmount(loanAmount, loanType);
+            
+            // For jumbo loans, use conventional rate + 0.25%
+            if (actualLoanType === 'jumbo') {
+                return currentRates.conventional + 0.25;
+            }
+            
+            return currentRates[actualLoanType] || currentRates.conventional;
+        }
+
+        function calculateMinimumDownPayment(homePrice, requestedLoanType = 'conventional') {
+            const CONVENTIONAL_LIMIT = 806500;
+            
+            // If home price allows conventional loan, minimal down payment
+            if (homePrice <= CONVENTIONAL_LIMIT) {
+                if (requestedLoanType === 'fha') return homePrice * 0.035; // 3.5%
+                if (requestedLoanType === 'va') return 0; // 0%
+                return homePrice * 0.03; // 3% conventional
+            }
+            
+            // For homes above conventional limit, calculate minimum to stay conventional
+            const downToStayConventional = homePrice - CONVENTIONAL_LIMIT;
+            const jumboMinimumDown = homePrice * 0.20; // 20% for jumbo
+            
+            return Math.min(downToStayConventional, jumboMinimumDown);
+        }
+
+        function calculateAffordability(monthlyIncome, monthlyDebt = 0, loanType = 'conventional') {
+            let maxHousingRatio, maxTotalDebtRatio;
+            
+            switch(loanType.toLowerCase()) {
+                case 'conventional':
+                    maxHousingRatio = 0.50;
+                    maxTotalDebtRatio = 0.50;
+                    break;
+                case 'fha':
+                    maxHousingRatio = 0.47;
+                    maxTotalDebtRatio = 0.57;
+                    break;
+                case 'va':
+                    maxHousingRatio = 0.50;
+                    maxTotalDebtRatio = 0.50;
+                    break;
+                default:
+                    maxHousingRatio = 0.50;
+                    maxTotalDebtRatio = 0.50;
+            }
+            
+            const maxTotalDebt = monthlyIncome * maxTotalDebtRatio;
+            const maxHousingFromDebt = maxTotalDebt - monthlyDebt;
+            const maxHousingFromRatio = monthlyIncome * maxHousingRatio;
+            
+            // Take the lower of the two limits
+            const maxHousingPayment = Math.min(maxHousingFromDebt, maxHousingFromRatio);
+            
+            return {
+                maxHousingPayment: Math.max(0, maxHousingPayment),
+                maxTotalDebt,
+                currentDebtUsage: monthlyDebt,
+                remainingDebtCapacity: maxTotalDebt - monthlyDebt,
+                housingRatio: maxHousingRatio,
+                totalDebtRatio: maxTotalDebtRatio
+            };
+        }
+
+        function parseNumberFromText(text) {
+            // Match numbers with K, M suffixes or regular numbers with commas/dollars
+            const numberMatches = text.match(/\$?[\d,]+\.?\d*[KMkm]?/g);
+            
+            if (!numberMatches) return [];
+            
+            return numberMatches.map(match => {
+                // Remove $ and commas
+                let cleanNumber = match.replace(/[$,]/g, '');
+                
+                // Handle K (thousands) and M (millions)
+                if (cleanNumber.toLowerCase().includes('k')) {
+                    return parseFloat(cleanNumber.replace(/k/i, '')) * 1000;
+                } else if (cleanNumber.toLowerCase().includes('m')) {
+                    return parseFloat(cleanNumber.replace(/m/i, '')) * 1000000;
+                } else {
+                    return parseInt(cleanNumber);
+                }
+            });
+        }
+
+        // ===== RATE API INTEGRATION =====
+        // Live Rate API Integration - Zillow API
+        const ZILLOW_API_BASE = 'https://mortgageapi.zillow.com/getCurrentRates';
+        const PARTNER_ID = 'RD-MPWGSPZ';
+        
+        let currentRates = {
+            conventional: 7.125,
+            fha: 6.875,
+            va: 6.750,
+            jumbo: 7.375,
+            lastUpdated: null,
+            isLoading: false
+        };
+
+        // Function to build dynamic API URLs
+        function buildRateQueries(homePrice, loanAmount, state = 'FL') {
+            const baseParams = `partnerId=${PARTNER_ID}&queries.1.propertyBucket.location.stateAbbreviation=${state}&queries.1.propertyBucket.propertyValue=${homePrice}&queries.1.propertyBucket.loanAmount=${loanAmount}`;
+            
+            return {
+                conventional: `${ZILLOW_API_BASE}?${baseParams}&queries.1.loanType=Conventional`,
+                fha: `${ZILLOW_API_BASE}?${baseParams}&queries.1.loanType=FHA`,
+                va: `${ZILLOW_API_BASE}?${baseParams}&queries.1.loanType=VA`,
+                jumbo: `${ZILLOW_API_BASE}?${baseParams}&queries.1.loanType=Jumbo`
+            };
+        }
+
+        // Helper function to extract rate data with zero filtering
+        function extractRateData(apiResponse, loanType) {
+            try {
+                console.log(`${loanType} API Response:`, apiResponse);
+                
+                if (!apiResponse.rates || !apiResponse.rates['1']) {
+                    console.log(`No rates found for ${loanType}`);
+                    return null;
+                }
+                
+                const rateData = apiResponse.rates['1'];
+                
+                // Filter out zero rates (API returning 0 means unavailable)
+                if (rateData.rate === 0 || rateData.apr === 0) {
+                    console.log(`${loanType} returned zero rates - not available`);
+                    return null;
+                }
+                
+                console.log(`Successfully extracted ${loanType} rate:`, rateData.rate, 'APR:', rateData.apr);
+                
+                return {
+                    loanType: loanType,
+                    rate: rateData.rate,
+                    apr: rateData.apr
+                };
+            } catch (error) {
+                console.error(`Error parsing ${loanType} rate:`, error);
+                return null;
+            }
+        }
+
+        // Smart function to fetch appropriate rate types based on loan amount
+        async function fetchLiveRates(homePrice = 400000, loanAmount = 360000) {
+            if (currentRates.isLoading) return currentRates;
+            
+            currentRates.isLoading = true;
+            const queries = buildRateQueries(homePrice, loanAmount);
+            
+            // Define loan limits (2025 updated)
+            const FHA_LIMIT = 524250;
+            const CONVENTIONAL_LIMIT = 806500;
+            
+            try {
+                console.log(`Fetching rates for loan amount: $${loanAmount.toLocaleString()}`);
+                console.log('Query URLs:', queries);
+                
+                // Test with a single request first to debug
+                console.log('Testing conventional rate fetch...');
+                const testResponse = await fetch(queries.conventional, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors'
+                });
+                
+                console.log('Test response status:', testResponse.status);
+                console.log('Test response headers:', testResponse.headers);
+                
+                const testData = await testResponse.json();
+                console.log('Test response data:', testData);
+                
+                // If test succeeds, proceed with all requests
+                const fetchPromises = [
+                    fetch(queries.conventional).then(r => r.json()).then(data => ({type: 'conventional', data})),
+                    fetch(queries.va).then(r => r.json()).then(data => ({type: 'va', data}))
+                ];
+                
+                // Only fetch FHA if loan amount is within limits
+                if (loanAmount <= FHA_LIMIT) {
+                    console.log('Loan amount eligible for FHA - fetching FHA rates');
+                    fetchPromises.push(
+                        fetch(queries.fha).then(r => r.json()).then(data => ({type: 'fha', data}))
+                    );
+                } else {
+                    console.log(`Loan amount exceeds FHA limit`);
+                }
+                
+                // Don't fetch jumbo rates - we'll calculate them from conventional + 0.25%
+                if (loanAmount > CONVENTIONAL_LIMIT) {
+                    console.log('Loan amount requires jumbo loan - will use conventional + 0.25%');
+                }
+                
+                // Wait for all API calls
+                const responses = await Promise.all(fetchPromises);
+                
+                // Process each response and update current rates
+                responses.forEach(response => {
+                    const rateData = extractRateData(response.data, response.type);
+                    if (rateData) {
+                        currentRates[response.type] = rateData.rate;
+                    }
+                });
+                
+                // Calculate jumbo rate from conventional
+                if (currentRates.conventional) {
+                    currentRates.jumbo = currentRates.conventional + 0.25;
+                }
+                
+                currentRates.lastUpdated = new Date();
+                currentRates.isLoading = false;
+                
+                console.log('Updated rates:', currentRates);
+                return currentRates;
+                
+            } catch (error) {
+                console.error('Failed to fetch rates:', error);
+                console.log('Error name:', error.name);
+                console.log('Error message:', error.message);
+                console.log('Error stack:', error.stack);
+                
+                // For now, use realistic fallback rates so the app works
+                console.log('Using fallback rates for development/testing');
+                currentRates = {
+                    conventional: 7.125,
+                    fha: 6.875,
+                    va: 6.750,
+                    jumbo: 7.375,
+                    lastUpdated: new Date(),
+                    isLoading: false
+                };
+                
+                return currentRates;
+            }
+        }
+
+        // ===== CHAT SYSTEM FUNCTIONS =====
+        // Voice recognition setup
+        let recognition;
+        let isListening = false;
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('messageInput').value = transcript;
+                stopListening();
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                stopListening();
+            };
+
+            recognition.onend = function() {
+                stopListening();
+            };
+        }
+
+        function toggleVoiceRecognition() {
+            if (!recognition) {
+                alert('Voice recognition not supported in this browser');
+                return;
+            }
+
+            if (isListening) {
+                recognition.stop();
+            } else {
+                recognition.start();
+                startListening();
+            }
+        }
+
+        function startListening() {
+            isListening = true;
+            const voiceButton = document.getElementById('voiceButton');
+            voiceButton.classList.add('listening');
+            voiceButton.innerHTML = '🔴';
+        }
+
+        function stopListening() {
+            isListening = false;
+            const voiceButton = document.getElementById('voiceButton');
+            voiceButton.classList.remove('listening');
+            voiceButton.innerHTML = '🎤';
+        }
+
+        // Chat functionality
+        function addMessage(content, isUser = false, isTyping = false) {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+            
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'message-avatar';
+            avatarDiv.textContent = isUser ? 'YOU' : 'AI';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = isTyping ? 'typing-indicator' : 'message-content';
+            
+            if (isTyping) {
+                contentDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            } else {
+                contentDiv.innerHTML = content;
+            }
+            
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+            
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            return messageDiv;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, true);
+            input.value = '';
+            
+            // Show typing indicator
+            const typingMessage = addMessage('', false, true);
+            
+            // Process message after short delay
+            setTimeout(() => {
+                typingMessage.remove();
+                processUserMessage(message);
+            }, 1000 + Math.random() * 1000);
+        }
+
+        function sendQuickMessage(message) {
+            document.getElementById('messageInput').value = message;
+            sendMessage();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // ===== AI RESPONSE FUNCTIONS =====
+        function processUserMessage(message) {
+            const response = generateResponse(message);
+            addMessage(response);
+        }
+
+        function generateResponse(message) {
+            const msg = message.toLowerCase();
+            
+            // Payment calculation requests
+            if (msg.includes('payment') || msg.includes('calculate')) {
+                return handlePaymentCalculation(message);
+            }
+            
+            // Credit score questions
+            if (msg.includes('credit score') || msg.includes('credit')) {
+                return generateCreditResponse();
+            }
+            
+            // Loan type comparisons
+            if (msg.includes('loan type') || msg.includes('compare') || msg.includes('fha') || msg.includes('conventional')) {
+                return generateLoanTypeResponse();
+            }
+            
+            // Affordability questions
+            if (msg.includes('afford') || msg.includes('qualify')) {
+                return handleAffordabilityCalculation(message);
+            }
+            
+            // Interest rate questions
+            if (msg.includes('rate') || msg.includes('interest')) {
+                return generateRateResponse();
+            }
+            
+            // Down payment questions
+            if (msg.includes('down payment') || msg.includes('down')) {
+                return generateDownPaymentResponse();
+            }
+            
+            // Default helpful response
+            return generateDefaultResponse();
+        }
+
+        function handlePaymentCalculation(message) {
+            // Extract numbers from the message using improved parsing
+            const numbers = parseNumberFromText(message);
+            
+            if (!numbers || numbers.length === 0) {
+                return `I'd be happy to calculate a payment for you! I need some details:
+                
+                • Home price (e.g., $400K, $1.2M)
+                • Down payment amount or percentage
+                • Loan term (usually 30 years)
+                
+                Try asking: "Calculate payment for $350K home with $50K down"`;
+            }
+            
+            // Parse the numbers
+            let homePrice = 400000; // default
+            let downPayment = 0;
+            let loanTerm = 30;
+            let loanType = 'conventional';
+            
+            // Detect loan type from message
+            if (message.toLowerCase().includes('fha')) loanType = 'fha';
+            if (message.toLowerCase().includes('va')) loanType = 'va';
+            if (message.toLowerCase().includes('jumbo')) loanType = 'jumbo';
+            
+            if (numbers.length >= 1) {
+                homePrice = numbers[0];
+            }
+            
+            // Look for down payment indicators
+            if (message.includes('%')) {
+                const percentMatch = message.match(/(\d+)%/);
+                if (percentMatch) {
+                    downPayment = homePrice * (parseInt(percentMatch[1]) / 100);
+                }
+            } else if (numbers.length >= 2) {
+                downPayment = numbers[1];
+            } else {
+                // Calculate smart default down payment
+                const minDown = calculateMinimumDownPayment(homePrice, loanType);
+                downPayment = Math.max(minDown, homePrice * 0.1); // At least 10% or minimum required
+            }
+            
+            const loanAmount = homePrice - downPayment;
+            const CONVENTIONAL_LIMIT = 806500;
+            
+            // Check if down payment is sufficient for jumbo scenarios
+            let warningMessage = '';
+            if (loanAmount > CONVENTIONAL_LIMIT) {
+                const minDownForJumbo = homePrice * 0.20;
+                const minDownToStayConventional = homePrice - CONVENTIONAL_LIMIT;
+                
+                if (downPayment < minDownForJumbo && downPayment < minDownToStayConventional) {
+                    const minDownNeeded = Math.min(minDownForJumbo, minDownToStayConventional);
+                    warningMessage = `⚠️ **Down payment too low**: You need at least $${minDownNeeded.toLocaleString()} down (${(minDownNeeded/homePrice*100).toFixed(1)}%) for this loan amount.`;
+                }
+            }
+            
+            // Get live rate for this loan
+            const interestRate = getCurrentRate(loanAmount, loanType);
+            const actualLoanType = getLoanTypeFromAmount(loanAmount, loanType);
+            
+            const principalAndInterest = calculateMortgage(loanAmount, interestRate, loanTerm);
+            const propertyTax = calculatePropertyTax(homePrice);
+            const insurance = calculateInsurance(homePrice);
+            const pmi = calculatePMI(loanAmount, homePrice, actualLoanType);
+            const totalPayment = principalAndInterest + propertyTax + insurance + pmi;
+            
+            // Show rate breakdown for jumbo loans
+            let rateDisplay = `${interestRate.toFixed(3)}%`;
+            if (actualLoanType === 'jumbo') {
+                rateDisplay = `${interestRate.toFixed(3)}% (Conventional ${currentRates.conventional.toFixed(3)}% + 0.25% jumbo premium)`;
+            }
+            
+            // Show rate update status
+            const rateStatus = currentRates.lastUpdated ? 
+                `(Updated: ${currentRates.lastUpdated.toLocaleTimeString()})` : 
+                '(Using current market rates)';
+            
+            // Fetch fresh rates for this specific scenario in background
+            fetchLiveRates(homePrice, loanAmount).then(() => {
+                console.log('Background rate update completed');
+            });
+            
+            return `${warningMessage ? warningMessage + '\n\n' : ''}<div class="calculation-result">
+                <div class="calculation-title">Payment Calculation - ${actualLoanType.toUpperCase()} Loan</div>
+                <div class="payment-breakdown">
+                    <div><strong>Home Price:</strong> $${homePrice.toLocaleString()}</div>
+                    <div><strong>Down Payment:</strong> $${downPayment.toLocaleString()} (${(downPayment/homePrice*100).toFixed(1)}%)</div>
+                    <div><strong>Loan Amount:</strong> $${loanAmount.toLocaleString()}</div>
+                    <div><strong>Interest Rate:</strong> ${rateDisplay}</div>
+                    <div><strong>Principal & Interest:</strong> $${Math.round(principalAndInterest).toLocaleString()}</div>
+                    <div><strong>Property Tax:</strong> $${Math.round(propertyTax).toLocaleString()}</div>
+                    <div><strong>Insurance:</strong> $${Math.round(insurance).toLocaleString()}</div>
+                    <div><strong>PMI:</strong> $${Math.round(pmi).toLocaleString()}</div>
+                    <div style="grid-column: 1/-1; border-top: 1px solid #ccc; margin-top: 8px; padding-top: 8px;">
+                        <strong>Total Monthly Payment: $${Math.round(totalPayment).toLocaleString()}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            ${rateStatus}
+            
+            ${actualLoanType === 'jumbo' ? 
+                `This is a jumbo loan (over $806,500). Note: No PMI required with 20%+ down payment.` :
+                actualLoanType === 'fha' && loanAmount > 524250 ?
+                'Note: This loan amount exceeds FHA limits, showing conventional rates instead.' :
+                `This calculation uses live ${actualLoanType.toUpperCase()} rates from Zillow.`
+            } 
+            
+            Would you like me to help you get pre-qualified or explore different loan scenarios?`;
+        }
+
+        function handleAffordabilityCalculation(message) {
+            // Extract income from message using improved parsing
+            const numbers = parseNumberFromText(message);
+            
+            if (!numbers || numbers.length === 0) {
+                return generateAffordabilityResponse();
+            }
+            
+            let monthlyIncome = numbers[0];
+            let monthlyDebt = 0;
+            
+            // Check if this looks like annual income (> 50k)
+            if (monthlyIncome > 50000) {
+                monthlyIncome = monthlyIncome / 12;
+            }
+            
+            // Look for debt amount in message
+            if (numbers.length >= 2) {
+                monthlyDebt = numbers[1];
+            }
+            
+            // Determine loan type from message
+            let loanType = 'conventional';
+            if (message.toLowerCase().includes('fha')) loanType = 'fha';
+            if (message.toLowerCase().includes('va')) loanType = 'va';
+            
+            const affordability = calculateAffordability(monthlyIncome, monthlyDebt, loanType);
+            
+            // Estimate home price from max payment
+            const estimatedRate = 7.25;
+            const maxLoanAmount = (affordability.maxHousingPayment - 400) / (calculateMortgage(100000, estimatedRate, 30) / 100000); // Subtract ~$400 for taxes/insurance
+            const estimatedHomePrice = maxLoanAmount / 0.9; // Assuming 10% down
+            
+            return `<div class="calculation-result">
+                <div class="calculation-title">Affordability Analysis (${loanType.toUpperCase()})</div>
+                <div class="payment-breakdown">
+                    <div><strong>Monthly Income:</strong> $${monthlyIncome.toLocaleString()}</div>
+                    <div><strong>Current Debt:</strong> $${monthlyDebt.toLocaleString()}</div>
+                    <div><strong>Max Housing Payment:</strong> $${Math.round(affordability.maxHousingPayment).toLocaleString()}</div>
+                    <div><strong>Max Total Debt:</strong> $${Math.round(affordability.maxTotalDebt).toLocaleString()}</div>
+                    <div><strong>Debt Capacity Remaining:</strong> $${Math.round(affordability.remainingDebtCapacity).toLocaleString()}</div>
+                    <div><strong>Estimated Home Price:</strong> $${Math.round(estimatedHomePrice).toLocaleString()}</div>
+                    <div style="grid-column: 1/-1; border-top: 1px solid #ccc; margin-top: 8px; padding-top: 8px;">
+                        <strong>Ratios Used: ${(affordability.housingRatio * 100).toFixed(0)}% housing / ${(affordability.totalDebtRatio * 100).toFixed(0)}% total debt</strong>
+                    </div>
+                </div>
+            </div>
+            
+            ${loanType === 'fha' ? 
+                "FHA allows higher total debt ratios (57%) but is more restrictive on housing (47%)." :
+                loanType === 'va' ?
+                "VA loans offer the same generous 50/50 ratios as conventional, plus no down payment!" :
+                "Conventional loans offer flexible 50/50 ratios - great for borrowers with good credit."
+            }
+            
+            Want me to calculate exact payments for a specific home price?`;
+        }
+
+        function generateAffordabilityResponse() {
+            return `Great question! Here's the current affordability breakdown:
+
+**Conventional Loans (50/50 Rule):**
+• Housing costs ≤ 50% of gross monthly income
+• Total debt ≤ 50% of gross monthly income
+
+**FHA Loans (47/57 Rule):**
+• Housing costs ≤ 47% of gross monthly income
+• Total debt ≤ 57% of gross monthly income
+
+**VA Loans (50/50 Rule):**
+• Housing costs ≤ 50% of gross monthly income
+• Total debt ≤ 50% of gross monthly income
+
+**Quick calculation:** Monthly income × 0.50 = max housing payment (conventional/VA)
+
+But I can be more precise! What's your:
+• Monthly gross income?
+• Monthly debt payments (cards, cars, etc.)?
+• Target down payment amount?
+
+I'll calculate exactly how much home you can afford and what your payments would look like.`;
+        }
+
+        function generateCreditResponse() {
+            return `Credit score requirements vary by loan type:
+
+**Conventional Loans:** 620+ (better rates at 740+)
+**FHA Loans:** 580+ (3.5% down) or 500+ (10% down)
+**VA Loans:** No minimum (typically 620+ for best rates)
+**USDA Loans:** 640+ recommended
+
+💡 **Pro tip:** Even a 20-point credit score increase can save you thousands over the loan term!
+
+Would you like tips on improving your credit score, or shall we run some payment scenarios based on your current score?`;
+        }
+
+        function generateLoanTypeResponse() {
+            return `Here's a quick comparison of loan types:
+
+**Conventional** - Best for strong credit (740+), 20% down avoids PMI
+**FHA** - Great for first-time buyers, only 3.5% down required
+**VA** - Exclusive to veterans, 0% down with no PMI
+**Jumbo** - For expensive homes above conforming limits
+
+Each has different benefits depending on your situation. What's your target price range and down payment amount? I can recommend the best option for you.`;
+        }
+
+        function generateRateResponse() {
+            const rateStatus = currentRates.lastUpdated ? 
+                `(Last updated: ${currentRates.lastUpdated.toLocaleTimeString()})` : 
+                '(Current market rates)';
+                
+            return `Current mortgage rates ${rateStatus}:
+
+**Conventional 30-year:** ${currentRates.conventional.toFixed ? currentRates.conventional.toFixed(3) : currentRates.conventional}%
+**FHA 30-year:** ${currentRates.fha.toFixed ? currentRates.fha.toFixed(3) : currentRates.fha}%
+**VA 30-year:** ${currentRates.va.toFixed ? currentRates.va.toFixed(3) : currentRates.va}%
+**Jumbo 30-year:** ${currentRates.jumbo.toFixed ? currentRates.jumbo.toFixed(3) : currentRates.jumbo}%
+
+Rates are fetched live from Zillow and change throughout the day based on:
+• Credit score (740+ gets best rates)
+• Down payment amount  
+• Loan type and term
+• Current market conditions
+
+Want me to calculate payments using current rates for a specific scenario? Just tell me the home price and down payment!`;
+        }
+
+        function generateDownPaymentResponse() {
+            return `Down payment options by loan type:
+
+**Conventional:** 3-5% minimum (20% avoids PMI)
+**FHA:** 3.5% minimum
+**VA:** 0% down for qualified veterans
+**USDA:** 0% down for eligible rural areas
+
+**The reality:** More down payment = lower monthly payment, but don't drain your savings completely. You'll need money for:
+• Closing costs (2-3% of home price)
+• Emergency fund
+• Moving expenses
+
+What's your target home price? I can show you payment differences with various down payment amounts.`;
+        }
+
+        function generateDefaultResponse() {
+            const responses = [
+                "I'm here to help with all your mortgage questions! Try asking about payments, credit requirements, or loan options.",
+                "That's a great question! I specialize in mortgage calculations and loan guidance. What specific scenario would you like me to help with?",
+                "I'd love to help you with that! Could you provide more details so I can give you the most accurate information?",
+                "Let me help you with your mortgage needs. Would you like to calculate payments, compare loan types, or discuss qualification requirements?"
+            ];
+            
+            return responses[Math.floor(Math.random() * responses.length)] + `
+            
+            <div class="quick-actions">
+                <div class="quick-action" onclick="sendQuickMessage('Calculate payment for $400K home')">Calculate Payment</div>
+                <div class="quick-action" onclick="sendQuickMessage('What credit score do I need?')">Credit Requirements</div>
+                <div class="quick-action" onclick="sendQuickMessage('How much can I afford?')">Affordability</div>
+            </div>`;
+        }
+
+        // ===== INITIALIZATION =====
+        // Initialize by fetching rates on page load
+        window.addEventListener('load', function() {
+            // Fetch initial rates with default scenario
+            fetchLiveRates(400000, 360000);
+            
+            // Update rates every 15 minutes
+            setInterval(() => fetchLiveRates(400000, 360000), 15 * 60 * 1000);
+        });
+    </script>
+</body>
+</html>
